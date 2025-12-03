@@ -45,8 +45,11 @@ interface InventoryItem {
   icon: string;
 }
 
+type CameraView = 'first-person' | 'third-person' | 'isometric';
+
 export default function Index() {
   const { toast } = useToast();
+  const [cameraView, setCameraView] = useState<CameraView>('third-person');
   const [money, setMoney] = useState(1000);
   const [reputation, setReputation] = useState(50);
   const [totalCustomers, setTotalCustomers] = useState(0);
@@ -275,8 +278,17 @@ export default function Index() {
 
   const activeOrders = machines.filter(m => m.status === 'running').length;
 
+  const getBackgroundStyle = () => {
+    if (cameraView === 'first-person') {
+      return 'min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950';
+    } else if (cameraView === 'isometric') {
+      return 'min-h-screen bg-gradient-to-tr from-slate-950 via-slate-900 to-blue-950';
+    }
+    return 'min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950';
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className={`${getBackgroundStyle()} transition-all duration-700`}>
       <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 sm:gap-4">
@@ -289,6 +301,51 @@ export default function Index() {
               </h1>
               <p className="text-sm sm:text-base text-slate-400">3D Симулятор бизнеса</p>
             </div>
+          </div>
+          
+          <div className="flex gap-2 bg-slate-800/80 p-1.5 rounded-xl border-2 border-slate-700/50 backdrop-blur">
+            <Button
+              onClick={() => setCameraView('first-person')}
+              variant={cameraView === 'first-person' ? 'default' : 'ghost'}
+              size="sm"
+              className={`${
+                cameraView === 'first-person'
+                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 shadow-lg shadow-cyan-500/30'
+                  : 'text-slate-400 hover:text-white'
+              } transition-all`}
+            >
+              <Icon name="Eye" size={16} className="mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">От 1-го лица</span>
+              <span className="sm:hidden">1P</span>
+            </Button>
+            <Button
+              onClick={() => setCameraView('third-person')}
+              variant={cameraView === 'third-person' ? 'default' : 'ghost'}
+              size="sm"
+              className={`${
+                cameraView === 'third-person'
+                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 shadow-lg shadow-cyan-500/30'
+                  : 'text-slate-400 hover:text-white'
+              } transition-all`}
+            >
+              <Icon name="Video" size={16} className="mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Обзор</span>
+              <span className="sm:hidden">3P</span>
+            </Button>
+            <Button
+              onClick={() => setCameraView('isometric')}
+              variant={cameraView === 'isometric' ? 'default' : 'ghost'}
+              size="sm"
+              className={`${
+                cameraView === 'isometric'
+                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 shadow-lg shadow-cyan-500/30'
+                  : 'text-slate-400 hover:text-white'
+              } transition-all`}
+            >
+              <Icon name="Cuboid" size={16} className="mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Изометрия</span>
+              <span className="sm:hidden">ISO</span>
+            </Button>
           </div>
         </div>
 
@@ -381,31 +438,99 @@ export default function Index() {
           </TabsList>
 
           <TabsContent value="machines" className="space-y-4 sm:space-y-6 mt-4 sm:mt-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
-              {machines.map(machine => (
+            {cameraView === 'first-person' && (
+              <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 sm:p-4 mb-4 backdrop-blur">
+                <div className="flex items-center gap-2">
+                  <Icon name="Eye" size={20} className="text-cyan-400" />
+                  <span className="text-cyan-300 text-sm sm:text-base font-medium">
+                    Режим от первого лица — детальный обзор каждой машины
+                  </span>
+                </div>
+              </div>
+            )}
+            {cameraView === 'isometric' && (
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3 sm:p-4 mb-4 backdrop-blur">
+                <div className="flex items-center gap-2">
+                  <Icon name="Cuboid" size={20} className="text-purple-400" />
+                  <span className="text-purple-300 text-sm sm:text-base font-medium">
+                    Изометрический вид — полный обзор всей прачечной
+                  </span>
+                </div>
+              </div>
+            )}
+            {cameraView === 'third-person' && (
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 sm:p-4 mb-4 backdrop-blur">
+                <div className="flex items-center gap-2">
+                  <Icon name="Video" size={20} className="text-blue-400" />
+                  <span className="text-blue-300 text-sm sm:text-base font-medium">
+                    Режим обзора — сбалансированный вид для управления
+                  </span>
+                </div>
+              </div>
+            )}
+            <div 
+              className={`grid gap-4 sm:gap-8 transition-all duration-500 ${
+                cameraView === 'first-person'
+                  ? 'grid-cols-1 max-w-2xl mx-auto'
+                  : cameraView === 'third-person'
+                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                  : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+              }`}
+              style={{
+                perspective: cameraView === 'first-person' ? '800px' : cameraView === 'third-person' ? '1200px' : '1500px',
+              }}
+            >
+              {machines.map((machine, index) => {
+                const getCameraTransform = () => {
+                  if (cameraView === 'first-person') {
+                    return {
+                      transform: `perspective(800px) rotateX(5deg) scale(1.1)`,
+                      transformStyle: 'preserve-3d' as const,
+                    };
+                  } else if (cameraView === 'third-person') {
+                    return {
+                      transform: 'perspective(1000px) rotateX(2deg)',
+                      transformStyle: 'preserve-3d' as const,
+                    };
+                  } else {
+                    return {
+                      transform: `perspective(1500px) rotateX(35deg) rotateZ(${index % 2 === 0 ? -5 : 5}deg)`,
+                      transformStyle: 'preserve-3d' as const,
+                    };
+                  }
+                };
+
+                return (
                 <Card
                   key={machine.id}
-                  className={`bg-slate-800/70 border-2 backdrop-blur transition-all transform hover:scale-[1.02] ${
+                  className={`bg-slate-800/70 border-2 backdrop-blur transition-all hover:scale-[1.02] ${
                     machine.status === 'running'
                       ? 'border-cyan-500 shadow-2xl shadow-cyan-500/30'
                       : machine.status === 'idle'
                       ? 'border-slate-600'
                       : 'border-orange-500'
                   }`}
-                  style={{
-                    transform: 'perspective(1000px) rotateX(2deg)',
-                    transformStyle: 'preserve-3d',
-                  }}
+                  style={getCameraTransform()}
                 >
                   <CardHeader>
                     <div 
-                      className={`absolute -top-6 sm:-top-8 left-1/2 -translate-x-1/2 w-24 h-24 sm:w-32 sm:h-32 rounded-xl sm:rounded-2xl shadow-2xl ${
+                      className={`absolute ${
+                        cameraView === 'first-person' 
+                          ? '-top-12 w-40 h-40' 
+                          : cameraView === 'isometric'
+                          ? '-top-4 w-20 h-20'
+                          : '-top-6 sm:-top-8 w-24 h-24 sm:w-32 sm:h-32'
+                      } left-1/2 -translate-x-1/2 rounded-xl sm:rounded-2xl shadow-2xl transition-all duration-500 ${
                         machine.type === 'washer' 
                           ? 'bg-gradient-to-br from-cyan-400 via-cyan-500 to-blue-600' 
                           : 'bg-gradient-to-br from-orange-400 via-orange-500 to-red-600'
                       }`}
                       style={{
-                        transform: 'perspective(600px) rotateY(-5deg) translateZ(20px)',
+                        transform: cameraView === 'first-person'
+                          ? 'perspective(600px) rotateY(0deg) translateZ(40px)'
+                          : cameraView === 'isometric'
+                          ? 'perspective(600px) rotateY(-15deg) translateZ(15px)'
+                          : 'perspective(600px) rotateY(-5deg) translateZ(20px)',
                         boxShadow: machine.status === 'running' 
                           ? '0 20px 50px -12px rgba(6, 182, 212, 0.5), inset 0 2px 20px rgba(255,255,255,0.2)'
                           : '0 20px 40px -12px rgba(0, 0, 0, 0.5), inset 0 2px 20px rgba(255,255,255,0.2)',
@@ -424,13 +549,21 @@ export default function Index() {
                         </div>
                         <Icon 
                           name={machine.type === 'washer' ? 'Waves' : 'Wind'} 
-                          size={32}
-                          className="text-white relative z-10 drop-shadow-lg sm:w-10 sm:h-10"
+                          size={cameraView === 'first-person' ? 48 : cameraView === 'isometric' ? 24 : 32}
+                          className={`text-white relative z-10 drop-shadow-lg ${
+                            cameraView === 'first-person' ? '' : 'sm:w-10 sm:h-10'
+                          }`}
                         />
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between pt-16 sm:pt-24">
+                    <div className={`flex items-center justify-between ${
+                      cameraView === 'first-person' 
+                        ? 'pt-32' 
+                        : cameraView === 'isometric'
+                        ? 'pt-12'
+                        : 'pt-16 sm:pt-24'
+                    }`}>
                       <div>
                         <CardTitle className="text-white text-xl sm:text-2xl drop-shadow-lg">{machine.id}</CardTitle>
                         <CardDescription className="text-xs sm:text-sm text-slate-300">
@@ -556,7 +689,8 @@ export default function Index() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              );
+              })}
             </div>
           </TabsContent>
 
