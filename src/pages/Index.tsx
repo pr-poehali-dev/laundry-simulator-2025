@@ -16,6 +16,7 @@ interface Machine {
   customer?: Customer;
   level: number;
   capacity: number;
+  laundryLoad: number;
 }
 
 interface Customer {
@@ -24,6 +25,7 @@ interface Customer {
   requirements: string[];
   satisfaction: number;
   payment: number;
+  laundryAmount: number;
 }
 
 interface Review {
@@ -34,17 +36,31 @@ interface Review {
   time: string;
 }
 
+interface InventoryItem {
+  id: string;
+  name: string;
+  type: 'detergent' | 'softener' | 'bleach';
+  quantity: number;
+  price: number;
+  icon: string;
+}
+
 export default function Index() {
   const { toast } = useToast();
   const [money, setMoney] = useState(1000);
   const [reputation, setReputation] = useState(50);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [machines, setMachines] = useState<Machine[]>([
-    { id: 'W1', type: 'washer', status: 'idle', progress: 0, timeLeft: 0, level: 1, capacity: 5 },
-    { id: 'W2', type: 'washer', status: 'idle', progress: 0, timeLeft: 0, level: 1, capacity: 5 },
-    { id: 'W3', type: 'washer', status: 'idle', progress: 0, timeLeft: 0, level: 2, capacity: 8 },
-    { id: 'D1', type: 'dryer', status: 'idle', progress: 0, timeLeft: 0, level: 1, capacity: 5 },
-    { id: 'D2', type: 'dryer', status: 'idle', progress: 0, timeLeft: 0, level: 1, capacity: 5 },
+    { id: 'W1', type: 'washer', status: 'idle', progress: 0, timeLeft: 0, level: 1, capacity: 5, laundryLoad: 0 },
+    { id: 'W2', type: 'washer', status: 'idle', progress: 0, timeLeft: 0, level: 1, capacity: 5, laundryLoad: 0 },
+    { id: 'W3', type: 'washer', status: 'idle', progress: 0, timeLeft: 0, level: 2, capacity: 8, laundryLoad: 0 },
+    { id: 'D1', type: 'dryer', status: 'idle', progress: 0, timeLeft: 0, level: 1, capacity: 5, laundryLoad: 0 },
+    { id: 'D2', type: 'dryer', status: 'idle', progress: 0, timeLeft: 0, level: 1, capacity: 5, laundryLoad: 0 },
+  ]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([
+    { id: '1', name: 'Порошок', type: 'detergent', quantity: 50, price: 100, icon: 'Package' },
+    { id: '2', name: 'Кондиционер', type: 'softener', quantity: 30, price: 150, icon: 'Droplets' },
+    { id: '3', name: 'Отбеливатель', type: 'bleach', quantity: 20, price: 120, icon: 'Sparkles' },
   ]);
   const [reviews, setReviews] = useState<Review[]>([
     { id: '1', customerName: 'Анна М.', rating: 5, comment: 'Отличный сервис! Белье идеально чистое', time: '2 часа назад' },
@@ -69,18 +85,73 @@ export default function Index() {
       if (!selectedReqs.includes(req)) selectedReqs.push(req);
     }
     
+    const laundryAmount = 2 + Math.floor(Math.random() * 4);
+    
     return {
       id: `C${Date.now()}`,
       name: customerNames[Math.floor(Math.random() * customerNames.length)],
       requirements: selectedReqs,
       satisfaction: 100,
       payment: 150 + Math.floor(Math.random() * 150),
+      laundryAmount,
     };
+  };
+
+  const loadLaundry = (machineId: string, amount: number) => {
+    const machine = machines.find(m => m.id === machineId);
+    if (!machine || machine.status !== 'idle') return;
+
+    if (amount > machine.capacity) {
+      toast({
+        title: '❌ Перегрузка',
+        description: `Максимум ${machine.capacity} кг для этой машины`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setMachines(prev =>
+      prev.map(m =>
+        m.id === machineId ? { ...m, laundryLoad: amount } : m
+      )
+    );
+
+    toast({
+      title: '✅ Белье загружено',
+      description: `${amount} кг в машину ${machineId}`,
+    });
   };
 
   const startMachine = (machineId: string) => {
     const machine = machines.find(m => m.id === machineId);
     if (!machine || machine.status !== 'idle') return;
+
+    if (machine.laundryLoad === 0) {
+      toast({
+        title: '❌ Загрузите белье',
+        description: 'Сначала добавьте белье в машину',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const detergentNeeded = Math.ceil(machine.laundryLoad / 2);
+    const detergent = inventory.find(i => i.type === 'detergent');
+    
+    if (!detergent || detergent.quantity < detergentNeeded) {
+      toast({
+        title: '❌ Нет порошка',
+        description: `Требуется ${detergentNeeded} ед. порошка`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setInventory(prev =>
+      prev.map(i =>
+        i.type === 'detergent' ? { ...i, quantity: i.quantity - detergentNeeded } : i
+      )
+    );
 
     const customer = generateCustomer();
     const duration = 30 + Math.floor(Math.random() * 30);
@@ -96,8 +167,35 @@ export default function Index() {
     setTotalCustomers(prev => prev + 1);
     
     toast({
-      title: '🧺 Новый клиент',
-      description: `${customer.name} — ${customer.requirements.join(', ')}`,
+      title: '🧺 Стирка запущена',
+      description: `${customer.name} — ${customer.laundryAmount} кг белья`,
+    });
+  };
+
+  const buyInventoryItem = (itemId: string, amount: number) => {
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+
+    const cost = item.price * amount;
+    if (money < cost) {
+      toast({
+        title: '❌ Недостаточно средств',
+        description: `Требуется ${cost}₽`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setMoney(prev => prev - cost);
+    setInventory(prev =>
+      prev.map(i =>
+        i.id === itemId ? { ...i, quantity: i.quantity + amount } : i
+      )
+    );
+
+    toast({
+      title: '✅ Товар куплен',
+      description: `${item.name} +${amount} ед.`,
     });
   };
 
@@ -119,7 +217,7 @@ export default function Index() {
     setMachines(prev =>
       prev.map(m =>
         m.id === machineId
-          ? { ...m, level: m.level + 1, capacity: m.capacity + 3 }
+          ? { ...m, level: m.level + 1, capacity: m.capacity + 3, laundryLoad: 0 }
           : m
       )
     );
@@ -162,7 +260,7 @@ export default function Index() {
                 });
               }
 
-              return { ...machine, status: 'idle', progress: 0, timeLeft: 0, customer: undefined };
+              return { ...machine, status: 'idle', progress: 0, timeLeft: 0, customer: undefined, laundryLoad: 0 };
             }
 
             return { ...machine, progress: Math.min(100, newProgress), timeLeft: newTimeLeft };
@@ -179,33 +277,33 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="bg-cyan-500/20 p-4 rounded-2xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/20">
-              <Icon name="Waves" size={32} className="text-cyan-400" />
+      <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="bg-cyan-500/20 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/20">
+              <Icon name="Waves" size={24} className="text-cyan-400 sm:w-8 sm:h-8" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+              <h1 className="text-2xl sm:text-4xl font-bold text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]">
                 Прачечная 2025
               </h1>
-              <p className="text-slate-400">3D Симулятор бизнеса</p>
+              <p className="text-sm sm:text-base text-slate-400">3D Симулятор бизнеса</p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card 
             className="bg-gradient-to-br from-emerald-900/40 to-slate-800/50 border-2 border-emerald-500/30 backdrop-blur shadow-xl shadow-emerald-500/20"
             style={{ transform: 'perspective(800px) rotateY(-2deg)' }}
           >
-            <CardHeader className="pb-3">
-              <CardDescription className="text-emerald-300/80">Баланс</CardDescription>
-              <CardTitle className="text-4xl text-emerald-400 flex items-center gap-3 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                  <Icon name="Wallet" size={28} />
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardDescription className="text-xs sm:text-sm text-emerald-300/80">Баланс</CardDescription>
+              <CardTitle className="text-xl sm:text-4xl text-emerald-400 flex items-center gap-2 sm:gap-3 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">
+                <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <Icon name="Wallet" size={20} className="sm:w-7 sm:h-7" />
                 </div>
-                {money}₽
+                <span className="truncate">{money}₽</span>
               </CardTitle>
             </CardHeader>
           </Card>
@@ -214,13 +312,13 @@ export default function Index() {
             className="bg-gradient-to-br from-cyan-900/40 to-slate-800/50 border-2 border-cyan-500/30 backdrop-blur shadow-xl shadow-cyan-500/20"
             style={{ transform: 'perspective(800px) rotateY(-1deg)' }}
           >
-            <CardHeader className="pb-3">
-              <CardDescription className="text-cyan-300/80">Репутация</CardDescription>
-              <CardTitle className="text-4xl text-cyan-400 flex items-center gap-3 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
-                  <Icon name="Star" size={28} />
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardDescription className="text-xs sm:text-sm text-cyan-300/80">Репутация</CardDescription>
+              <CardTitle className="text-xl sm:text-4xl text-cyan-400 flex items-center gap-2 sm:gap-3 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">
+                <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                  <Icon name="Star" size={20} className="sm:w-7 sm:h-7" />
                 </div>
-                {reputation}/100
+                <span className="truncate">{reputation}/100</span>
               </CardTitle>
             </CardHeader>
           </Card>
@@ -229,11 +327,11 @@ export default function Index() {
             className="bg-gradient-to-br from-blue-900/40 to-slate-800/50 border-2 border-blue-500/30 backdrop-blur shadow-xl shadow-blue-500/20"
             style={{ transform: 'perspective(800px) rotateY(1deg)' }}
           >
-            <CardHeader className="pb-3">
-              <CardDescription className="text-blue-300/80">Активных заказов</CardDescription>
-              <CardTitle className="text-4xl text-blue-400 flex items-center gap-3 drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                  <Icon name="Clock" size={28} />
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardDescription className="text-xs sm:text-sm text-blue-300/80">Заказов</CardDescription>
+              <CardTitle className="text-xl sm:text-4xl text-blue-400 flex items-center gap-2 sm:gap-3 drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]">
+                <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <Icon name="Clock" size={20} className="sm:w-7 sm:h-7" />
                 </div>
                 {activeOrders}
               </CardTitle>
@@ -244,11 +342,11 @@ export default function Index() {
             className="bg-gradient-to-br from-purple-900/40 to-slate-800/50 border-2 border-purple-500/30 backdrop-blur shadow-xl shadow-purple-500/20"
             style={{ transform: 'perspective(800px) rotateY(2deg)' }}
           >
-            <CardHeader className="pb-3">
-              <CardDescription className="text-purple-300/80">Всего клиентов</CardDescription>
-              <CardTitle className="text-4xl text-purple-400 flex items-center gap-3 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">
-                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                  <Icon name="Users" size={28} />
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardDescription className="text-xs sm:text-sm text-purple-300/80">Клиентов</CardDescription>
+              <CardTitle className="text-xl sm:text-4xl text-purple-400 flex items-center gap-2 sm:gap-3 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">
+                <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Icon name="Users" size={20} className="sm:w-7 sm:h-7" />
                 </div>
                 {totalCustomers}
               </CardTitle>
@@ -256,26 +354,34 @@ export default function Index() {
           </Card>
         </div>
 
-        <Tabs defaultValue="machines" className="space-y-6">
-          <TabsList className="bg-slate-800/80 border-2 border-slate-700/50 backdrop-blur-xl p-1.5 shadow-2xl">
+        <Tabs defaultValue="machines" className="space-y-4 sm:space-y-6">
+          <TabsList className="bg-slate-800/80 border-2 border-slate-700/50 backdrop-blur-xl p-1 sm:p-1.5 shadow-2xl w-full sm:w-auto grid grid-cols-3">
             <TabsTrigger 
               value="machines" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30 transition-all"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30 transition-all text-xs sm:text-sm"
             >
-              <Icon name="Waves" size={18} className="mr-2" />
-              Оборудование
+              <Icon name="Waves" size={16} className="mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Оборудование</span>
+              <span className="sm:hidden">Машины</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="inventory" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30 transition-all text-xs sm:text-sm"
+            >
+              <Icon name="Package" size={16} className="mr-1 sm:mr-2" />
+              Инвентарь
             </TabsTrigger>
             <TabsTrigger 
               value="reviews" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30 transition-all"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30 transition-all text-xs sm:text-sm"
             >
-              <Icon name="Star" size={18} className="mr-2" />
+              <Icon name="Star" size={16} className="mr-1 sm:mr-2" />
               Отзывы
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="machines" className="space-y-6 mt-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <TabsContent value="machines" className="space-y-4 sm:space-y-6 mt-4 sm:mt-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
               {machines.map(machine => (
                 <Card
                   key={machine.id}
@@ -293,7 +399,7 @@ export default function Index() {
                 >
                   <CardHeader>
                     <div 
-                      className={`absolute -top-8 left-1/2 -translate-x-1/2 w-32 h-32 rounded-2xl shadow-2xl ${
+                      className={`absolute -top-6 sm:-top-8 left-1/2 -translate-x-1/2 w-24 h-24 sm:w-32 sm:h-32 rounded-xl sm:rounded-2xl shadow-2xl ${
                         machine.type === 'washer' 
                           ? 'bg-gradient-to-br from-cyan-400 via-cyan-500 to-blue-600' 
                           : 'bg-gradient-to-br from-orange-400 via-orange-500 to-red-600'
@@ -318,28 +424,29 @@ export default function Index() {
                         </div>
                         <Icon 
                           name={machine.type === 'washer' ? 'Waves' : 'Wind'} 
-                          size={40} 
-                          className="text-white relative z-10 drop-shadow-lg"
+                          size={32}
+                          className="text-white relative z-10 drop-shadow-lg sm:w-10 sm:h-10"
                         />
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between pt-24">
+                    <div className="flex items-center justify-between pt-16 sm:pt-24">
                       <div>
-                        <CardTitle className="text-white text-2xl drop-shadow-lg">{machine.id}</CardTitle>
-                        <CardDescription className="text-slate-300">
-                          {machine.type === 'washer' ? 'Стиральная машина' : 'Сушильная машина'}
+                        <CardTitle className="text-white text-xl sm:text-2xl drop-shadow-lg">{machine.id}</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm text-slate-300">
+                          {machine.type === 'washer' ? 'Стиральная' : 'Сушильная'}
                         </CardDescription>
                       </div>
                       <Badge
                         variant={machine.status === 'running' ? 'default' : 'secondary'}
-                        className={`shadow-lg ${
+                        className={`shadow-lg text-xs ${
                           machine.status === 'running'
                             ? 'bg-cyan-500/30 text-cyan-300 border-cyan-400 shadow-cyan-500/50 animate-pulse'
                             : 'bg-slate-700/50 text-slate-300 border-slate-500'
                         }`}
                       >
-                        {machine.status === 'running' ? '● Работает' : '○ Свободна'}
+                        <span className="hidden sm:inline">{machine.status === 'running' ? '● Работает' : '○ Свободна'}</span>
+                        <span className="sm:hidden">{machine.status === 'running' ? '●' : '○'}</span>
                       </Badge>
                     </div>
                   </CardHeader>
@@ -358,11 +465,46 @@ export default function Index() {
                       </div>
                     </div>
 
+                    {machine.status === 'idle' && machine.laundryLoad === 0 && (
+                      <div className="p-3 sm:p-4 bg-gradient-to-br from-purple-900/30 to-slate-800/30 rounded-xl border-2 border-purple-500/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Icon name="ShoppingBag" size={16} className="text-purple-400" />
+                          <span className="text-sm font-medium text-purple-300">Загрузить белье</span>
+                        </div>
+                        <div className="flex gap-2">
+                          {[2, 3, 5].map(amount => (
+                            <Button
+                              key={amount}
+                              onClick={() => loadLaundry(machine.id, amount)}
+                              size="sm"
+                              className="flex-1 bg-purple-600/50 hover:bg-purple-600 text-white text-xs sm:text-sm"
+                            >
+                              {amount} кг
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {machine.status === 'idle' && machine.laundryLoad > 0 && (
+                      <div className="p-3 sm:p-4 bg-gradient-to-br from-emerald-900/30 to-slate-800/30 rounded-xl border-2 border-emerald-500/30">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Icon name="CheckCircle" size={16} className="text-emerald-400" />
+                            <span className="text-sm font-medium text-emerald-300">Белье загружено</span>
+                          </div>
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500">
+                            {machine.laundryLoad} кг
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
+
                     {machine.status === 'running' && machine.customer && (
-                      <div className="space-y-3 p-4 bg-gradient-to-br from-slate-900/70 to-slate-800/70 rounded-xl border-2 border-cyan-500/30 shadow-xl shadow-cyan-500/10">
+                      <div className="space-y-3 p-3 sm:p-4 bg-gradient-to-br from-slate-900/70 to-slate-800/70 rounded-xl border-2 border-cyan-500/30 shadow-xl shadow-cyan-500/10">
                         <div className="flex items-center gap-2">
                           <Icon name="User" size={16} className="text-cyan-400" />
-                          <span className="text-white font-medium">{machine.customer.name}</span>
+                          <span className="text-sm sm:text-base text-white font-medium">{machine.customer.name}</span>
                         </div>
                         <div className="space-y-1">
                           {machine.customer.requirements.map(req => (
@@ -391,33 +533,110 @@ export default function Index() {
                       </div>
                     )}
 
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex gap-2 sm:gap-3 pt-2">
                       <Button
                         onClick={() => startMachine(machine.id)}
                         disabled={machine.status !== 'idle'}
-                        className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:shadow-none transition-all transform hover:scale-[1.02]"
-                        style={{
-                          transform: 'perspective(400px) translateZ(5px)',
-                        }}
+                        className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:shadow-none transition-all text-xs sm:text-sm"
+                        size="sm"
                       >
-                        <Icon name="Play" size={18} className="mr-2" />
+                        <Icon name="Play" size={16} className="mr-1 sm:mr-2" />
                         Запустить
                       </Button>
                       <Button
                         onClick={() => upgradeMachine(machine.id)}
                         variant="outline"
-                        className="border-2 border-emerald-500/50 hover:bg-emerald-500/20 hover:border-emerald-400 text-emerald-400 shadow-lg shadow-emerald-500/20 transition-all transform hover:scale-[1.05]"
-                        style={{
-                          transform: 'perspective(400px) translateZ(5px)',
-                        }}
+                        size="sm"
+                        className="border-2 border-emerald-500/50 hover:bg-emerald-500/20 hover:border-emerald-400 text-emerald-400 shadow-lg shadow-emerald-500/20 transition-all text-xs sm:text-sm"
                       >
-                        <Icon name="ArrowUp" size={18} className="mr-1" />
-                        {machine.level * 500}₽
+                        <Icon name="ArrowUp" size={16} className="mr-1" />
+                        <span className="hidden sm:inline">{machine.level * 500}₽</span>
+                        <span className="sm:hidden">↑</span>
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="inventory" className="space-y-4 sm:space-y-6 mt-4 sm:mt-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {inventory.map(item => {
+                const isLow = item.quantity < 10;
+                return (
+                  <Card
+                    key={item.id}
+                    className={`bg-slate-800/70 border-2 backdrop-blur transition-all ${
+                      isLow ? 'border-red-500/50 shadow-lg shadow-red-500/20' : 'border-slate-600'
+                    }`}
+                  >
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-3 rounded-xl ${
+                            item.type === 'detergent'
+                              ? 'bg-blue-500/20 text-blue-400'
+                              : item.type === 'softener'
+                              ? 'bg-purple-500/20 text-purple-400'
+                              : 'bg-green-500/20 text-green-400'
+                          }`}>
+                            <Icon name={item.icon as any} size={24} />
+                          </div>
+                          <div>
+                            <CardTitle className="text-white text-lg sm:text-xl">{item.name}</CardTitle>
+                            <CardDescription className="text-xs sm:text-sm">
+                              {item.type === 'detergent' ? 'Стиральный порошок' : item.type === 'softener' ? 'Кондиционер' : 'Отбеливатель'}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-slate-700/30 to-slate-800/30 border border-slate-600/50">
+                        <div className="flex items-center gap-2">
+                          <Icon name="Box" size={16} className="text-slate-400" />
+                          <span className="text-slate-300 text-sm">В наличии</span>
+                        </div>
+                        <Badge className={`${
+                          isLow
+                            ? 'bg-red-500/20 text-red-400 border-red-500'
+                            : 'bg-emerald-500/20 text-emerald-400 border-emerald-500'
+                        }`}>
+                          {item.quantity} ед.
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-amber-900/20 to-slate-800/30 border border-amber-500/30">
+                        <span className="text-amber-300 text-sm font-medium">Цена за единицу</span>
+                        <span className="text-amber-400 font-bold">{item.price}₽</span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Icon name="ShoppingCart" size={16} className="text-cyan-400" />
+                          <span className="text-sm font-medium text-cyan-300">Купить</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[5, 10, 20].map(amount => (
+                            <Button
+                              key={amount}
+                              onClick={() => buyInventoryItem(item.id, amount)}
+                              size="sm"
+                              className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 shadow-lg text-xs"
+                            >
+                              <span className="flex flex-col items-center leading-tight">
+                                <span className="font-bold">+{amount}</span>
+                                <span className="text-[10px] opacity-80">{amount * item.price}₽</span>
+                              </span>
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </TabsContent>
 
