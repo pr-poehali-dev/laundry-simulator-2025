@@ -178,125 +178,188 @@ export default function Index() {
   const activeOrders = machines.filter(m => m.status === 'running').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="bg-cyan-500/20 p-4 rounded-2xl border border-cyan-500/30">
+            <div className="bg-cyan-500/20 p-4 rounded-2xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/20">
               <Icon name="Waves" size={32} className="text-cyan-400" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white">Прачечная 2025</h1>
-              <p className="text-slate-400">Управляй своим бизнесом</p>
+              <h1 className="text-4xl font-bold text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                Прачечная 2025
+              </h1>
+              <p className="text-slate-400">3D Симулятор бизнеса</p>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur">
+          <Card 
+            className="bg-gradient-to-br from-emerald-900/40 to-slate-800/50 border-2 border-emerald-500/30 backdrop-blur shadow-xl shadow-emerald-500/20"
+            style={{ transform: 'perspective(800px) rotateY(-2deg)' }}
+          >
             <CardHeader className="pb-3">
-              <CardDescription className="text-slate-400">Баланс</CardDescription>
-              <CardTitle className="text-3xl text-emerald-400 flex items-center gap-2">
-                <Icon name="Wallet" size={28} />
+              <CardDescription className="text-emerald-300/80">Баланс</CardDescription>
+              <CardTitle className="text-4xl text-emerald-400 flex items-center gap-3 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <Icon name="Wallet" size={28} />
+                </div>
                 {money}₽
               </CardTitle>
             </CardHeader>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur">
+          <Card 
+            className="bg-gradient-to-br from-cyan-900/40 to-slate-800/50 border-2 border-cyan-500/30 backdrop-blur shadow-xl shadow-cyan-500/20"
+            style={{ transform: 'perspective(800px) rotateY(-1deg)' }}
+          >
             <CardHeader className="pb-3">
-              <CardDescription className="text-slate-400">Репутация</CardDescription>
-              <CardTitle className="text-3xl text-cyan-400 flex items-center gap-2">
-                <Icon name="Star" size={28} />
+              <CardDescription className="text-cyan-300/80">Репутация</CardDescription>
+              <CardTitle className="text-4xl text-cyan-400 flex items-center gap-3 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">
+                <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                  <Icon name="Star" size={28} />
+                </div>
                 {reputation}/100
               </CardTitle>
             </CardHeader>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur">
+          <Card 
+            className="bg-gradient-to-br from-blue-900/40 to-slate-800/50 border-2 border-blue-500/30 backdrop-blur shadow-xl shadow-blue-500/20"
+            style={{ transform: 'perspective(800px) rotateY(1deg)' }}
+          >
             <CardHeader className="pb-3">
-              <CardDescription className="text-slate-400">Активных заказов</CardDescription>
-              <CardTitle className="text-3xl text-blue-400 flex items-center gap-2">
-                <Icon name="Clock" size={28} />
+              <CardDescription className="text-blue-300/80">Активных заказов</CardDescription>
+              <CardTitle className="text-4xl text-blue-400 flex items-center gap-3 drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]">
+                <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <Icon name="Clock" size={28} />
+                </div>
                 {activeOrders}
               </CardTitle>
             </CardHeader>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur">
+          <Card 
+            className="bg-gradient-to-br from-purple-900/40 to-slate-800/50 border-2 border-purple-500/30 backdrop-blur shadow-xl shadow-purple-500/20"
+            style={{ transform: 'perspective(800px) rotateY(2deg)' }}
+          >
             <CardHeader className="pb-3">
-              <CardDescription className="text-slate-400">Всего клиентов</CardDescription>
-              <CardTitle className="text-3xl text-purple-400 flex items-center gap-2">
-                <Icon name="Users" size={28} />
+              <CardDescription className="text-purple-300/80">Всего клиентов</CardDescription>
+              <CardTitle className="text-4xl text-purple-400 flex items-center gap-3 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">
+                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Icon name="Users" size={28} />
+                </div>
                 {totalCustomers}
               </CardTitle>
             </CardHeader>
           </Card>
         </div>
 
-        <Tabs defaultValue="machines" className="space-y-4">
-          <TabsList className="bg-slate-800 border border-slate-700">
-            <TabsTrigger value="machines" className="data-[state=active]:bg-cyan-500/20">
+        <Tabs defaultValue="machines" className="space-y-6">
+          <TabsList className="bg-slate-800/80 border-2 border-slate-700/50 backdrop-blur-xl p-1.5 shadow-2xl">
+            <TabsTrigger 
+              value="machines" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30 transition-all"
+            >
               <Icon name="Waves" size={18} className="mr-2" />
               Оборудование
             </TabsTrigger>
-            <TabsTrigger value="reviews" className="data-[state=active]:bg-cyan-500/20">
+            <TabsTrigger 
+              value="reviews" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30 transition-all"
+            >
               <Icon name="Star" size={18} className="mr-2" />
               Отзывы
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="machines" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <TabsContent value="machines" className="space-y-6 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {machines.map(machine => (
                 <Card
                   key={machine.id}
-                  className={`bg-slate-800/70 border-2 backdrop-blur transition-all ${
+                  className={`bg-slate-800/70 border-2 backdrop-blur transition-all transform hover:scale-[1.02] ${
                     machine.status === 'running'
-                      ? 'border-cyan-500 shadow-lg shadow-cyan-500/20'
+                      ? 'border-cyan-500 shadow-2xl shadow-cyan-500/30'
                       : machine.status === 'idle'
                       ? 'border-slate-600'
                       : 'border-orange-500'
                   }`}
+                  style={{
+                    transform: 'perspective(1000px) rotateX(2deg)',
+                    transformStyle: 'preserve-3d',
+                  }}
                 >
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-3 rounded-xl ${
-                          machine.type === 'washer' 
-                            ? 'bg-cyan-500/20 text-cyan-400' 
-                            : 'bg-orange-500/20 text-orange-400'
-                        }`}>
-                          <Icon name={machine.type === 'washer' ? 'Waves' : 'Wind'} size={24} />
+                    <div 
+                      className={`absolute -top-8 left-1/2 -translate-x-1/2 w-32 h-32 rounded-2xl shadow-2xl ${
+                        machine.type === 'washer' 
+                          ? 'bg-gradient-to-br from-cyan-400 via-cyan-500 to-blue-600' 
+                          : 'bg-gradient-to-br from-orange-400 via-orange-500 to-red-600'
+                      }`}
+                      style={{
+                        transform: 'perspective(600px) rotateY(-5deg) translateZ(20px)',
+                        boxShadow: machine.status === 'running' 
+                          ? '0 20px 50px -12px rgba(6, 182, 212, 0.5), inset 0 2px 20px rgba(255,255,255,0.2)'
+                          : '0 20px 40px -12px rgba(0, 0, 0, 0.5), inset 0 2px 20px rgba(255,255,255,0.2)',
+                      }}
+                    >
+                      <div className="relative w-full h-full flex items-center justify-center">
+                        <div 
+                          className={`absolute inset-3 rounded-xl border-4 ${
+                            machine.type === 'washer' ? 'border-cyan-200/30' : 'border-orange-200/30'
+                          } bg-slate-900/40 backdrop-blur-sm`}
+                          style={{
+                            animation: machine.status === 'running' ? 'spin 2s linear infinite' : 'none',
+                          }}
+                        >
+                          <div className="w-full h-full rounded-lg bg-gradient-to-br from-white/10 to-transparent" />
                         </div>
-                        <div>
-                          <CardTitle className="text-white">{machine.id}</CardTitle>
-                          <CardDescription>
-                            {machine.type === 'washer' ? 'Стиральная' : 'Сушильная'}
-                          </CardDescription>
-                        </div>
+                        <Icon 
+                          name={machine.type === 'washer' ? 'Waves' : 'Wind'} 
+                          size={40} 
+                          className="text-white relative z-10 drop-shadow-lg"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-24">
+                      <div>
+                        <CardTitle className="text-white text-2xl drop-shadow-lg">{machine.id}</CardTitle>
+                        <CardDescription className="text-slate-300">
+                          {machine.type === 'washer' ? 'Стиральная машина' : 'Сушильная машина'}
+                        </CardDescription>
                       </div>
                       <Badge
                         variant={machine.status === 'running' ? 'default' : 'secondary'}
-                        className={
+                        className={`shadow-lg ${
                           machine.status === 'running'
-                            ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500'
-                            : 'bg-slate-700 text-slate-300'
-                        }
+                            ? 'bg-cyan-500/30 text-cyan-300 border-cyan-400 shadow-cyan-500/50 animate-pulse'
+                            : 'bg-slate-700/50 text-slate-300 border-slate-500'
+                        }`}
                       >
-                        {machine.status === 'running' ? 'Работает' : 'Свободна'}
+                        {machine.status === 'running' ? '● Работает' : '○ Свободна'}
                       </Badge>
                     </div>
                   </CardHeader>
 
                   <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-400">Уровень {machine.level}</span>
-                      <span className="text-slate-400">Загрузка {machine.capacity} кг</span>
+                    <div className="flex items-center justify-between text-sm p-3 rounded-lg bg-gradient-to-r from-slate-700/30 to-slate-800/30 border border-slate-600/50">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center">
+                          <span className="text-cyan-400 font-bold text-sm">{machine.level}</span>
+                        </div>
+                        <span className="text-slate-300 font-medium">Уровень</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Icon name="Package" size={16} className="text-slate-400" />
+                        <span className="text-slate-300 font-medium">{machine.capacity} кг</span>
+                      </div>
                     </div>
 
                     {machine.status === 'running' && machine.customer && (
-                      <div className="space-y-3 p-3 bg-slate-900/50 rounded-lg border border-slate-700">
+                      <div className="space-y-3 p-4 bg-gradient-to-br from-slate-900/70 to-slate-800/70 rounded-xl border-2 border-cyan-500/30 shadow-xl shadow-cyan-500/10">
                         <div className="flex items-center gap-2">
                           <Icon name="User" size={16} className="text-cyan-400" />
                           <span className="text-white font-medium">{machine.customer.name}</span>
@@ -328,21 +391,27 @@ export default function Index() {
                       </div>
                     )}
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-3 pt-2">
                       <Button
                         onClick={() => startMachine(machine.id)}
                         disabled={machine.status !== 'idle'}
-                        className="flex-1 bg-cyan-600 hover:bg-cyan-700"
+                        className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:shadow-none transition-all transform hover:scale-[1.02]"
+                        style={{
+                          transform: 'perspective(400px) translateZ(5px)',
+                        }}
                       >
-                        <Icon name="Play" size={16} className="mr-2" />
+                        <Icon name="Play" size={18} className="mr-2" />
                         Запустить
                       </Button>
                       <Button
                         onClick={() => upgradeMachine(machine.id)}
                         variant="outline"
-                        className="border-slate-600 hover:bg-slate-700"
+                        className="border-2 border-emerald-500/50 hover:bg-emerald-500/20 hover:border-emerald-400 text-emerald-400 shadow-lg shadow-emerald-500/20 transition-all transform hover:scale-[1.05]"
+                        style={{
+                          transform: 'perspective(400px) translateZ(5px)',
+                        }}
                       >
-                        <Icon name="ArrowUp" size={16} className="mr-1" />
+                        <Icon name="ArrowUp" size={18} className="mr-1" />
                         {machine.level * 500}₽
                       </Button>
                     </div>

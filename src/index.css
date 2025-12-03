@@ -98,4 +98,23 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes pulse-3d {
+    0%,
+    100% {
+      transform: perspective(600px) rotateY(-5deg) translateZ(20px) scale(1);
+    }
+    50% {
+      transform: perspective(600px) rotateY(-5deg) translateZ(25px) scale(1.05);
+    }
+  }
 }
